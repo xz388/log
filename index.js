@@ -92,15 +92,20 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         const auditLogs = await newState.guild.fetchAuditLogs({
             type: 27, // MEMBER_DISCONNECT
             limit: 1,
+            before: Date.now() + 1000
         });
         const disconnectLog = auditLogs.entries.first();
         const moderator = disconnectLog?.executor;
+        
+        const isKick = disconnectLog && 
+                      disconnectLog.targetId === member.id && 
+                      Date.now() - disconnectLog.createdTimestamp < 5000;
 
-        embed.setTitle('مغادرة الروم الصوتي')
-            .setDescription(`${member} غادر الروم الصوتي ${oldState.channel.name}`)
+        embed.setTitle(isKick ? 'طرد من الروم الصوتي' : 'مغادرة الروم الصوتي')
+            .setDescription(`${member} ${isKick ? 'تم طرده من' : 'غادر'} الروم الصوتي ${oldState.channel.name}`)
             .addFields({ 
-                name: moderator ? 'تم الطرد بواسطة' : 'نوع المغادرة',
-                value: moderator ? `${moderator.tag} (${moderator.id})` : 'مغادرة ذاتية'
+                name: isKick ? 'تم الطرد بواسطة' : 'نوع المغادرة',
+                value: isKick ? `${moderator.tag} (${moderator.id})` : 'مغادرة ذاتية'
             });
         await logChannel.send({ embeds: [embed] });
     }
